@@ -1,0 +1,306 @@
+---
+// No type definitions needed in frontmatter
+---
+
+<div class="max-w-2xl mx-auto px-3 sm:px-6 lg:px-8">
+  <header class="mb-6 sm:mb-8 px-4 sm:px-0">
+    <h1 class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">Miles & Steps Tracker</h1>
+    <p class="text-gray-600">Track your daily miles and steps</p>
+  </header>
+
+  <div class="bg-white rounded-lg shadow-sm p-3 sm:p-6">
+    <!-- Weekly/Monthly Summary -->
+    <div id="activitySummary" class="mb-8 p-4 bg-blue-50 rounded-lg" style="display: none;">
+      <!-- View Toggle -->
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+        <h2 class="text-xl font-semibold mb-2 sm:mb-0" id="summaryTitle">Weekly Summary</h2>
+        <div class="flex gap-2">
+          <button id="weeklyButton" class="px-2 sm:px-3 py-1 text-sm rounded bg-blue-500 text-white hover:bg-blue-600">Weekly</button>
+          <button id="monthlyButton" class="px-2 sm:px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300">Monthly</button>
+          <button id="yearlyButton" class="px-2 sm:px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300">Yearly</button>
+        </div>
+      </div>
+
+      <!-- Summary Content -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <div class="text-sm text-gray-500">Total Miles</div>
+          <div id="totalMiles" class="text-xl sm:text-2xl font-semibold text-gray-900">0</div>
+        </div>
+        <div class="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <div class="text-sm text-gray-500">Total Steps</div>
+          <div id="totalSteps" class="text-xl sm:text-2xl font-semibold text-gray-900">0</div>
+        </div>
+        <div class="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <div class="text-sm text-gray-500">Total Calories</div>
+          <div id="totalCalories" class="text-xl sm:text-2xl font-semibold text-gray-900">0</div>
+        </div>
+        <div class="bg-white p-3 sm:p-4 rounded-lg shadow">
+          <div class="text-sm text-gray-500 whitespace-nowrap">Latest Weight</div>
+          <div id="latestWeight" class="text-xl sm:text-2xl font-semibold text-gray-900">-</div>
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-2" id="dateRange"></p>
+      
+      <!-- Chart -->
+      <div class="mt-6">
+        <div class="flex justify-end mb-2">
+          <button id="showAverageButton" class="px-2 sm:px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300 transition-colors">
+            Show Average
+          </button>
+        </div>
+        <div class="h-[300px]">
+          <canvas id="activityChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-semibold text-gray-800">Daily Activities</h2>
+      <div class="flex gap-2">
+        <button
+          id="settingsButton"
+          class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors flex items-center gap-1"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+          Settings
+        </button>
+        <button
+          id="addButton"
+          class="px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors flex items-center gap-1"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          Add Activity
+        </button>
+      </div>
+    </div>
+
+    <div id="emptyState" class="text-center py-8 text-gray-500" style="display: none;">
+      No activities recorded yet. Click "Add Activity" to get started!
+    </div>
+
+    <!-- Activity List -->
+    <div class="mt-6">
+      <div id="activityList" class="space-y-2">
+        <template id="activityItemTemplate">
+          <div class="border border-gray-200 py-2.5 px-3 rounded-lg hover:bg-gray-50">
+            <div class="flex items-center justify-between w-full">
+              <!-- All stats in a single row -->
+              <div class="flex items-center gap-4 sm:gap-6 flex-grow">
+                <div class="text-gray-600 text-sm font-medium w-[100px]"></div>
+                <div class="flex items-center gap-4 sm:gap-6 flex-grow">
+                  <div class="text-center">
+                    <div class="text-gray-500 text-xs">Miles</div>
+                    <div class="text-gray-800 text-sm font-medium"></div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-gray-500 text-xs">Steps</div>
+                    <div class="text-gray-800 text-sm font-medium"></div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-gray-500 text-xs">Cal</div>
+                    <div class="text-gray-800 text-sm font-medium"></div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-gray-500 text-xs">Lbs</div>
+                    <div class="text-gray-800 text-sm font-medium"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Edit button -->
+              <button class="text-blue-500 hover:text-blue-600 p-1 ml-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Activity Modal -->
+  <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50" style="display: none;">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Add Activity</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+          <input
+            type="date"
+            id="dateInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Miles</label>
+          <input
+            type="number"
+            id="milesInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter miles"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Calories</label>
+          <input
+            type="number"
+            id="caloriesInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter calories"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Weight (lbs)</label>
+          <input
+            type="number"
+            id="weightInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter weight"
+          />
+        </div>
+        <div id="calculatedSteps" class="bg-blue-50 p-3 rounded-md hidden">
+          <div class="text-sm text-blue-700">
+            Calculated steps: <span id="stepsCount">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          id="cancelButton"
+          class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          id="saveButton"
+          class="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
+        >
+          Save Activity
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Activity Modal -->
+  <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50" style="display: none;">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Edit Activity</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+          <input
+            type="date"
+            id="editDateInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Miles</label>
+          <input
+            type="number"
+            id="editMilesInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter miles"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Calories</label>
+          <input
+            type="number"
+            id="editCaloriesInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter calories"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Weight (lbs)</label>
+          <input
+            type="number"
+            id="editWeightInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter weight"
+          />
+        </div>
+        <div id="editCalculatedSteps" class="bg-blue-50 p-3 rounded-md hidden">
+          <div class="text-sm text-blue-700">
+            Calculated steps: <span id="editStepsCount">0</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          id="cancelEditButton"
+          class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          id="saveEditButton"
+          class="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center p-4 z-50" style="display: none;">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Settings</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Steps per Mile</label>
+          <input
+            type="number"
+            id="stepsPerMileInput"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter steps per mile"
+          />
+          <p class="mt-1 text-sm text-gray-500">Default: 2000 steps per mile</p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button
+          id="cancelSettingsButton"
+          class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          id="saveSettingsButton"
+          class="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors"
+        >
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../scripts/tracker.ts';
+  
+  // Initialize UI elements when script loads
+  document.addEventListener('DOMContentLoaded', () => {
+    const dateInput = document.getElementById('dateInput') as HTMLInputElement;
+    const stepsPerMileInput = document.getElementById('stepsPerMileInput') as HTMLInputElement;
+    
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    if (stepsPerMileInput) {
+      stepsPerMileInput.value = '2000';
+    }
+    
+    // Dispatch event to initialize tracker
+    window.dispatchEvent(new Event('tracker:init'));
+  });
+</script> 
