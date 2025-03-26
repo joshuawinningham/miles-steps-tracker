@@ -28,43 +28,12 @@ type ViewMode = 'weekly' | 'monthly' | 'yearly';
 const STORAGE_KEY = 'miles-steps-tracker-activities';
 const SETTINGS_KEY = 'miles-steps-tracker-settings';
 
-// Restore previous data if no data exists
-const previousData = [
-  {"id":"1742593142056","date":"2025-03-21","miles":6.13,"steps":12260,"weight":180},
-  {"id":"1742593150479","date":"2025-03-20","miles":2.45,"steps":4900,"weight":181},
-  {"id":"1742594217082","date":"2025-03-17","miles":7.33,"steps":14660,"weight":182},
-  {"id":"1742594230605","date":"2025-03-18","miles":6.17,"steps":12340,"weight":181},
-  {"id":"1742594248491","date":"2025-03-19","miles":7.47,"steps":14940,"weight":180},
-  {"id":"1742594532952","date":"2025-03-14","miles":5.95,"steps":11900,"weight":183},
-  {"id":"1742595024869","date":"2025-03-13","miles":9,"steps":18000,"weight":184},
-  {"id":"1742595892883","date":"2025-03-12","miles":8.91,"steps":17820,"weight":185},
-  {"id":"1742595907290","date":"2025-03-11","miles":9.07,"steps":18140,"weight":186},
-  {"id":"1742595919373","date":"2025-03-10","miles":5.46,"steps":10920,"weight":187},
-  {"id":"1742595945701","date":"2025-03-08","miles":0.94,"steps":1880,"weight":188},
-  {"id":"1742595959664","date":"2025-03-07","miles":7.99,"steps":15980,"weight":189},
-  {"id":"1742595969462","date":"2025-03-06","miles":7.93,"steps":15860,"weight":190},
-  {"id":"1742595986749","date":"2025-03-05","miles":6.95,"steps":13900,"weight":191},
-  {"id":"1742595998967","date":"2025-03-04","miles":6.84,"steps":13680,"weight":192},
-  {"id":"1742596011815","date":"2025-03-03","miles":7.36,"steps":14720,"weight":193}
-];
-
 // Initialize state
 let STEPS_PER_MILE = 2000;
 let currentEditingActivity: Activity | null = null;
 let activityChart: Chart | null = null;
 let currentViewMode: ViewMode = 'weekly';
 let showAverageLine = true;
-
-// Check if we need to restore previous data
-const storedData = localStorage.getItem(STORAGE_KEY);
-if (!storedData) {
-  // Add calories field with 0 value to previous data
-  const dataWithCalories = previousData.map(activity => ({
-    ...activity,
-    calories: 0
-  }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithCalories));
-}
 
 // Load activities from localStorage
 function loadActivities(): Activity[] {
