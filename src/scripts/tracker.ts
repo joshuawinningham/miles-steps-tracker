@@ -901,4 +901,20 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Update UI with initial data
   updateUI();
+});
+
+// Clear all data from localStorage
+function clearAllData(): void {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SETTINGS_KEY);
+  activities = [];
+  updateUI();
+}
+
+// Add clear data button event listener
+const clearDataButton = document.getElementById('clearDataButton');
+clearDataButton?.addEventListener('click', () => {
+  if (confirm('Are you sure you want to clear all your activity data? This cannot be undone.')) {
+    clearAllData();
+  }
 }); 
