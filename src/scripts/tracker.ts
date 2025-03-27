@@ -2,6 +2,7 @@ import { format, parse, startOfWeek, endOfWeek, isWithinInterval, eachDayOfInter
          startOfMonth, endOfMonth } from 'date-fns';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
+import { syncActivitiesToFirebase, initializeFirebaseSync, syncSettingsToFirebase } from './firebase';
 
 Chart.register(annotationPlugin);
 
@@ -24,25 +25,31 @@ interface DailyTotal {
 
 type ViewMode = 'weekly' | 'monthly' | 'yearly';
 
-// State management
-const STORAGE_KEY = 'miles-steps-tracker-activities';
+// Constants
+const STORAGE_KEY = 'activities';
 const SETTINGS_KEY = 'miles-steps-tracker-settings';
-
-// Initialize state
 let STEPS_PER_MILE = 2000;
+
+// State management
 let currentEditingActivity: Activity | null = null;
 let activityChart: Chart | null = null;
 let currentViewMode: ViewMode = 'weekly';
 let showAverageLine = true;
 
+// Initialize state
+let activities = loadActivities();
+
 // Load activities from localStorage
 function loadActivities(): Activity[] {
   try {
-    const storedActivities = localStorage.getItem(STORAGE_KEY);
-    if (!storedActivities) {
+    const savedActivities = localStorage.getItem(STORAGE_KEY);
+    console.log('📥 Loading activities from localStorage:', savedActivities);
+    if (!savedActivities) {
+      console.log('No activities found in localStorage');
       return [];
     }
-    const parsedActivities = JSON.parse(storedActivities);
+    const parsedActivities = JSON.parse(savedActivities);
+    console.log('📦 Parsed activities:', parsedActivities);
     return Array.isArray(parsedActivities) ? parsedActivities : [];
   } catch (error) {
     console.error('Error loading activities:', error);
@@ -50,33 +57,41 @@ function loadActivities(): Activity[] {
   }
 }
 
-// Initialize activities
-let activities = loadActivities();
-
-// Save activities to localStorage
-function saveActivities(): void {
+// Save activities to localStorage and Firebase
+async function saveActivities(): Promise<void> {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
+    console.log('💾 Saving activities:', activities);
+    const activitiesJson = JSON.stringify(activities);
+    localStorage.setItem(STORAGE_KEY, activitiesJson);
+    console.log('📦 Saved to localStorage:', activitiesJson);
+    
+    // Sync to Firebase
+    console.log('🔄 Starting Firebase sync...');
+    await syncActivitiesToFirebase(activities);
+    console.log('✅ Activities saved and synced successfully');
   } catch (error) {
-    console.error('Error saving activities:', error);
+    console.error('❌ Error saving activities:', error);
   }
 }
 
 // Load settings from localStorage
-// function loadSettings(): { stepsPerMile: number } {
-//   const stored = localStorage.getItem(SETTINGS_KEY);
-//   if (!stored) return { stepsPerMile: 2000 };
-//   try {
-//     return JSON.parse(stored);
-//   } catch (e) {
-//     console.error('Error loading settings:', e);
-//     return { stepsPerMile: 2000 };
-//   }
-// }
+function loadSettings(): { stepsPerMile: number } {
+  const stored = localStorage.getItem(SETTINGS_KEY);
+  if (!stored) return { stepsPerMile: 2000 };
+  try {
+    const settings = JSON.parse(stored);
+    return { stepsPerMile: settings.stepsPerMile };
+  } catch (e) {
+    console.error('Error loading settings:', e);
+    return { stepsPerMile: 2000 };
+  }
+}
 
-// Save settings to localStorage
-function saveSettings(stepsPerMile: number): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ stepsPerMile }));
+// Save settings to localStorage and Firebase
+async function saveSettings(stepsPerMile: number): Promise<void> {
+  const settings = { stepsPerMile };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  await syncSettingsToFirebase(settings);
 }
 
 // Helper function to get today's date in YYYY-MM-DD format
@@ -173,53 +188,11 @@ milesInput?.addEventListener('input', (e: Event) => {
   }
 });
 
-saveButton?.addEventListener('click', () => {
-  if (!milesInput?.value) return;
-
-  const miles = parseFloat(milesInput.value);
-  const steps = Math.round(miles * STEPS_PER_MILE);
-  const calories = parseFloat(caloriesInput?.value || '0');
-  const weight = parseFloat(weightInput?.value || '0');
-  const date = dateInput?.value ?? getTodayDate();
-
-  const existingActivityIndex = activities.findIndex((a) => a.date === date);
-
-  if (existingActivityIndex !== -1) {
-    const existingActivity = activities[existingActivityIndex];
-    activities[existingActivityIndex] = {
-      ...existingActivity,
-      miles: Number((existingActivity.miles + miles).toFixed(2)),
-      steps: existingActivity.steps + steps,
-      calories: existingActivity.calories + calories,
-      weight: weight || existingActivity.weight,
-    };
-  } else {
-    activities.push({
-      id: Date.now().toString(),
-      date,
-      miles: Number(miles.toFixed(2)),
-      steps,
-      calories,
-      weight: weight || undefined,
-    });
-  }
-
-  saveActivities();
-  updateUI();
-  if (addModal) {
-    addModal.style.display = 'none';
-  }
-  if (milesInput) {
-    milesInput.value = '';
-  }
-  if (caloriesInput) {
-    caloriesInput.value = '';
-  }
-  if (weightInput) {
-    weightInput.value = '';
-  }
-  if (calculatedSteps) {
-    calculatedSteps.style.display = 'none';
+saveButton?.addEventListener('click', async () => {
+  const activity = getActivityFromInputs();
+  if (activity) {
+    await addActivity(activity);
+    closeAddModal();
   }
 });
 
@@ -273,31 +246,13 @@ editMilesInput?.addEventListener('input', (e: Event) => {
 
 cancelEditButton?.addEventListener('click', closeEditModal);
 
-saveEditButton?.addEventListener('click', () => {
-  if (!currentEditingActivity || !editMilesInput?.value) return;
-
-  const miles = parseFloat(editMilesInput.value);
-  const steps = Math.round(miles * STEPS_PER_MILE);
-  const calories = parseFloat(editCaloriesInput?.value || '0');
-  const weight = parseFloat(editWeightInput?.value || '0');
-
-  const activityIndex = activities.findIndex((a) => a.id === currentEditingActivity?.id);
-  if (activityIndex !== -1) {
-    activities[activityIndex] = {
-      ...activities[activityIndex],
-      miles: Number(miles.toFixed(2)),
-      steps,
-      calories,
-      weight: weight || undefined,
-    };
+saveEditButton?.addEventListener('click', async () => {
+  const updatedActivity = getActivityFromEditInputs();
+  if (updatedActivity && currentEditingActivity) {
+    updatedActivity.id = currentEditingActivity.id;
+    await updateActivity(updatedActivity);
+    closeEditModal();
   }
-
-  saveActivities();
-  updateUI();
-  if (editModal) {
-    editModal.style.display = 'none';
-  }
-  currentEditingActivity = null;
 });
 
 // Helper function to get daily totals for the current period
@@ -792,12 +747,23 @@ function renderActivities(): void {
     statDivs[2].textContent = Math.round(activity.calories).toString();
     statDivs[3].textContent = activity.weight ? Math.round(activity.weight).toString() : '-';
     
+    // Get action buttons
+    const buttons = item.querySelectorAll('button');
+    const editButton = buttons[0];
+    const deleteButton = buttons[1];
+    
     // Add edit button event listener
-    const editButton = item.querySelector('button');
     if (editButton) {
       editButton.addEventListener('click', () => {
         currentEditingActivity = activity;
         openEditModal(activity);
+      });
+    }
+    
+    // Add delete button event listener
+    if (deleteButton) {
+      deleteButton.addEventListener('click', () => {
+        deleteActivity(activity.id);
       });
     }
     
@@ -886,19 +852,48 @@ window.addEventListener('tracker:init', () => {
 
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Load initial activities
+  // Load initial activities from localStorage
   activities = loadActivities();
+  
+  // Load saved settings
+  const settings = loadSettings();
+  STEPS_PER_MILE = settings.stepsPerMile;
   
   // Set initial date and steps per mile
   if (dateInput) {
-    dateInput.value = new Date().toISOString().split('T')[0];
+    dateInput.value = getTodayDate();
   }
   
   if (stepsPerMileInput) {
-    const savedStepsPerMile = localStorage.getItem('stepsPerMile');
-    stepsPerMileInput.value = savedStepsPerMile || '2000';
+    stepsPerMileInput.value = STEPS_PER_MILE.toString();
   }
+
+  // Initialize Firebase sync
+  initializeFirebaseSync();
   
+  // Listen for activities update event
+  window.addEventListener('activitiesUpdated', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    if (customEvent.detail?.source === 'firebase') {
+      console.log('📥 Reloading activities from Firebase update');
+      activities = loadActivities();
+      updateUI();
+    }
+  });
+
+  // Listen for settings update event
+  window.addEventListener('settingsUpdated', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    if (customEvent.detail?.source === 'firebase') {
+      console.log('📥 Updating settings from Firebase:', customEvent.detail.settings);
+      STEPS_PER_MILE = customEvent.detail.settings.stepsPerMile;
+      if (stepsPerMileInput) {
+        stepsPerMileInput.value = STEPS_PER_MILE.toString();
+      }
+      updateUI();
+    }
+  });
+
   // Update UI with initial data
   updateUI();
 });
@@ -917,4 +912,110 @@ clearDataButton?.addEventListener('click', () => {
   if (confirm('Are you sure you want to clear all your activity data? This cannot be undone.')) {
     clearAllData();
   }
-}); 
+});
+
+// Delete an activity
+async function deleteActivity(activityId: string): Promise<void> {
+  if (confirm('Are you sure you want to delete this activity?')) {
+    activities = activities.filter(activity => activity.id !== activityId);
+    await saveActivities();
+    updateUI();
+  }
+}
+
+// Add or update activity for the day
+async function addActivity(newActivity: Activity): Promise<void> {
+  // Check if an activity already exists for this date
+  const existingIndex = activities.findIndex(activity => activity.date === newActivity.date);
+  
+  if (existingIndex !== -1) {
+    // Update existing activity
+    const existingActivity = activities[existingIndex];
+    activities[existingIndex] = {
+      ...existingActivity,
+      miles: existingActivity.miles + newActivity.miles,
+      steps: existingActivity.steps + newActivity.steps,
+      calories: existingActivity.calories + newActivity.calories,
+      weight: newActivity.weight || existingActivity.weight // Keep existing weight if no new weight provided
+    };
+    console.log('📝 Updated existing activity for', newActivity.date);
+  } else {
+    // Add new activity
+    activities.push(newActivity);
+    console.log('➕ Added new activity for', newActivity.date);
+  }
+
+  activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  await saveActivities();
+  updateUI();
+}
+
+// Update activity and UI
+async function updateActivity(updatedActivity: Activity): Promise<void> {
+  const index = activities.findIndex(a => a.id === updatedActivity.id);
+  if (index !== -1) {
+    activities[index] = updatedActivity;
+    activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    await saveActivities();
+    updateUI();
+  }
+}
+
+// Helper function to get activity data from Add modal inputs
+function getActivityFromInputs(): Activity | null {
+  if (!milesInput?.value) return null;
+
+  const miles = parseFloat(milesInput.value);
+  const steps = Math.round(miles * STEPS_PER_MILE);
+  const calories = parseFloat(caloriesInput?.value || '0');
+  const weight = parseFloat(weightInput?.value || '0');
+  const date = dateInput?.value ?? getTodayDate();
+
+  return {
+    id: date, // Use the date as the ID to ensure one activity per day
+    date,
+    miles: Number(miles.toFixed(2)),
+    steps,
+    calories,
+    weight: weight || undefined
+  };
+}
+
+// Helper function to get activity data from Edit modal inputs
+function getActivityFromEditInputs(): Activity | null {
+  if (!editMilesInput?.value) return null;
+
+  const miles = parseFloat(editMilesInput.value);
+  const steps = Math.round(miles * STEPS_PER_MILE);
+  const calories = parseFloat(editCaloriesInput?.value || '0');
+  const weight = parseFloat(editWeightInput?.value || '0');
+  const date = editDateInput?.value ?? getTodayDate();
+
+  return {
+    id: currentEditingActivity?.id || Date.now().toString(),
+    date,
+    miles: Number(miles.toFixed(2)),
+    steps,
+    calories,
+    weight: weight || undefined
+  };
+}
+
+// Helper function to close Add modal
+function closeAddModal(): void {
+  if (addModal) {
+    addModal.style.display = 'none';
+  }
+  if (milesInput) {
+    milesInput.value = '';
+  }
+  if (caloriesInput) {
+    caloriesInput.value = '';
+  }
+  if (weightInput) {
+    weightInput.value = '';
+  }
+  if (calculatedSteps) {
+    calculatedSteps.style.display = 'none';
+  }
+} 
