@@ -251,7 +251,7 @@ saveEditButton?.addEventListener('click', async () => {
   if (updatedActivity && currentEditingActivity) {
     updatedActivity.id = currentEditingActivity.id;
     await updateActivity(updatedActivity);
-    closeEditModal();
+  closeEditModal();
   }
 });
 
@@ -428,7 +428,7 @@ function updateActivityChart(): void {
     weightData = dailyTotals.map(day => day.weight ?? null);
     averageValue = currentViewMode === 'weekly' ? weeklyAvg : monthlyAvg;
   }
-
+  
   const chartConfig: ChartConfiguration = {
     type: 'bar',
     data: {
@@ -671,15 +671,15 @@ function updateUI(): void {
   // Update visibility of UI elements
   const hasActivities = activities.length > 0;
   
-  if (emptyState) {
+    if (emptyState) {
     emptyState.style.display = hasActivities ? 'none' : 'block';
-  }
+    }
   
   if (activityList) {
     activityList.style.display = hasActivities ? 'block' : 'none';
-  }
+    }
   
-  if (activitySummary) {
+    if (activitySummary) {
     activitySummary.style.display = hasActivities ? 'block' : 'none';
   }
   
@@ -700,6 +700,8 @@ function renderActivities(): void {
     return;
   }
   
+  console.log('🎨 Rendering activities:', activities);
+  
   // Remove all existing activities but keep the template
   const existingActivities = activityListElement.querySelectorAll('div[class*="border"]');
   existingActivities.forEach(activity => activity.remove());
@@ -709,6 +711,8 @@ function renderActivities(): void {
     parse(b.date, 'yyyy-MM-dd', new Date()).getTime() - 
     parse(a.date, 'yyyy-MM-dd', new Date()).getTime()
   );
+  
+  console.log('📅 Sorted activities:', sortedActivities);
   
   sortedActivities.forEach(activity => {
     const clone = template.content.cloneNode(true) as DocumentFragment;
@@ -723,19 +727,19 @@ function renderActivities(): void {
     const dateStr = format(date, 'EEE, MMM d');
     
     // Find the date and stats containers
-    const dateDiv = item.querySelector('.text-gray-600.text-sm.font-medium');
-    const statsContainer = item.querySelector('.flex.items-center.gap-4.flex-grow');
+    const dateDiv = item.querySelector('.text-gray-600');
+    const statsContainer = item.querySelector('.grid.grid-cols-4');
     
     if (!dateDiv || !statsContainer) {
-      console.error('Date or stats container not found');
+      console.error('Date or stats container not found', { dateDiv, statsContainer });
       return;
     }
     
     // Set the date
     dateDiv.textContent = dateStr;
     
-    // Get all stat value divs (the second div in each stat container)
-    const statDivs = statsContainer.querySelectorAll('.text-center > .text-gray-800');
+    // Get all stat value divs
+    const statDivs = statsContainer.querySelectorAll('.text-gray-800');
     if (statDivs.length !== 4) {
       console.error('Incorrect number of stat divs:', statDivs.length);
       return;
@@ -877,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customEvent.detail?.source === 'firebase') {
       console.log('📥 Reloading activities from Firebase update');
       activities = loadActivities();
-      updateUI();
+updateUI(); 
     }
   });
 
