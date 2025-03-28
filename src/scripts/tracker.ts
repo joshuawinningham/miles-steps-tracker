@@ -460,11 +460,12 @@ function updateActivityChart(): void {
       scales: {
         x: {
           ticks: {
-            autoSkip: false,
+            autoSkip: true,
+            maxTicksLimit: currentViewMode === 'yearly' ? 12 : window.innerWidth >= 768 ? (currentViewMode === 'monthly' ? 31 : 15) : 15,
             maxRotation: 0,
             minRotation: 0,
             font: {
-              size: 11
+              size: window.innerWidth >= 768 ? 11 : 10
             }
           },
           grid: {
@@ -477,7 +478,15 @@ function updateActivityChart(): void {
           position: 'left',
           title: {
             display: true,
-            text: 'Miles'
+            text: 'Miles',
+            font: {
+              size: 11
+            }
+          },
+          ticks: {
+            font: {
+              size: 10
+            }
           }
         },
         y1: {
@@ -486,10 +495,18 @@ function updateActivityChart(): void {
           position: 'right',
           title: {
             display: true,
-            text: 'Weight (lbs)'
+            text: 'Weight (lbs)',
+            font: {
+              size: 11
+            }
           },
           grid: {
             drawOnChartArea: false
+          },
+          ticks: {
+            font: {
+              size: 10
+            }
           }
         }
       },
@@ -753,21 +770,21 @@ function renderActivities(): void {
     
     // Get action buttons
     const buttons = item.querySelectorAll('button');
-    const editButton = buttons[0];
-    const deleteButton = buttons[1];
+    const deleteButton = buttons[0];
+    const editButton = buttons[1];
+    
+    // Add delete button event listener
+    if (deleteButton) {
+      deleteButton.addEventListener('click', () => {
+        deleteActivity(activity.id);
+      });
+    }
     
     // Add edit button event listener
     if (editButton) {
       editButton.addEventListener('click', () => {
         currentEditingActivity = activity;
         openEditModal(activity);
-      });
-    }
-    
-    // Add delete button event listener
-    if (deleteButton) {
-      deleteButton.addEventListener('click', () => {
-        deleteActivity(activity.id);
       });
     }
     
