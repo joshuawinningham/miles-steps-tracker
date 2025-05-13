@@ -555,8 +555,8 @@ function updateActivityChart(): void {
                 backgroundColor: 'rgba(234, 88, 12, 0.6)',
                 color: 'white',
                 padding: 4
-              }
-            }
+          }
+        }
           }
         } : undefined
       }
@@ -698,7 +698,7 @@ function updateUI(): void {
   
     if (activitySummary) {
     activitySummary.style.display = hasActivities ? 'block' : 'none';
-  }
+    }
   
   // Only update other UI elements if we have activities
   if (hasActivities) {
@@ -772,7 +772,7 @@ function renderActivities(): void {
     const buttons = item.querySelectorAll('button');
     const deleteButton = buttons[0];
     const editButton = buttons[1];
-    
+
     // Add delete button event listener
     if (deleteButton) {
       deleteButton.addEventListener('click', () => {
@@ -798,7 +798,7 @@ function renderActivities(): void {
   }
   if (activityListElement) {
     activityListElement.style.display = sortedActivities.length === 0 ? 'none' : 'block';
-  }
+      }
 }
 
 // Settings modal event listeners

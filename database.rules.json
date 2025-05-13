@@ -1,0 +1,23 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "activities": {
+      "$syncCode": {
+        ".read": "auth == null",
+        ".write": "auth == null",
+        ".validate": "newData.hasChildren()",
+        "$index": {
+          ".validate": "newData.hasChildren(['date', 'miles', 'steps', 'calories']) && newData.child('date').isString() && newData.child('miles').isNumber() && newData.child('steps').isNumber() && newData.child('calories').isNumber() && (!newData.child('weight').exists() || newData.child('weight').isNumber()) && $index.matches(/^[0-9]+$/)"
+        }
+      }
+    },
+    "settings": {
+      "$syncCode": {
+        ".read": "auth == null",
+        ".write": "auth == null",
+        ".validate": "newData.hasChildren(['stepsPerMile']) && newData.child('stepsPerMile').isNumber() && newData.child('stepsPerMile').val() > 0"
+      }
+    }
+  }
+} 

@@ -69,18 +69,18 @@ A modern web application for tracking daily walking/running activities, built wi
    ```
 
 2. Install dependencies:
-   ```bash
-   npm install
+```bash
+npm install
    # or
    yarn install
-   ```
+```
 
 3. Start the development server:
-   ```bash
-   npm run dev
+```bash
+npm run dev
    # or
    yarn dev
-   ```
+```
 
 4. Open your browser and navigate to `http://localhost:4321`
 
